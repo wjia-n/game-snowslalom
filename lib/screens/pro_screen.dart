@@ -30,26 +30,10 @@ class _ProScreenState extends State<ProScreen> {
   @override
   void initState() {
     super.initState();
-    widget.store.proPurchased.addListener(_onPro);
     widget.store.lastThanks.addListener(_onThanks);
   }
 
-  void _onPro() {
-    if (widget.store.proPurchased.value && mounted) {
-      widget.settings.setPro(true);
-      widget.audio.win();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('PRO unlocked — the whole mountain is yours!',
-              style: Alpine.body(15, theme: _t)),
-          backgroundColor: _t.hud,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      widget.store.proPurchased.value = false;
-    }
-  }
-
+  
   void _onThanks() {
     final msg = widget.store.lastThanks.value;
     if (msg == null || !mounted) return;
@@ -66,7 +50,6 @@ class _ProScreenState extends State<ProScreen> {
 
   @override
   void dispose() {
-    widget.store.proPurchased.removeListener(_onPro);
     widget.store.lastThanks.removeListener(_onThanks);
     super.dispose();
   }
@@ -102,16 +85,7 @@ class _ProScreenState extends State<ProScreen> {
                   horizontal: 22, vertical: 14),
               child: Column(
                 children: [
-                  _ComparisonCard(theme: t, isPro: s.isPro),
-                  const SizedBox(height: 16),
-                  _BuyCard(
-                    theme: t,
-                    settings: s,
-                    store: store,
-                    audio: widget.audio,
-                  ),
-                  const SizedBox(height: 16),
-                  _TipsCard(
+                                    _TipsCard(
                     theme: t,
                     store: store,
                     audio: widget.audio,
@@ -130,188 +104,6 @@ class _ProScreenState extends State<ProScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ComparisonCard extends StatelessWidget {
-  final MountainThemeDef theme;
-  final bool isPro;
-  const _ComparisonCard({required this.theme, required this.isPro});
-
-  @override
-  Widget build(BuildContext context) {
-    const rows = [
-      ['Mountain themes', '4', '12 + aurora nights'],
-      ['Skier styles', '4', '10 + custom creator'],
-      ['Difficulties', 'Bunny + Blue', '+ Black Diamond'],
-      ['Race modes', 'Time Trial, Pass & Play', '+ Score Attack'],
-      ['Pass & Play skiers', '2–4', '2–4'],
-    ];
-    return Alpine.panel(
-      theme: theme,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('FREE vs PRO',
-                  style: Alpine.display(20, theme: theme)),
-              const Spacer(),
-              if (isPro)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: theme.accent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text('YOU ARE PRO ⭐',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Table(
-            columnWidths: const {
-              0: FlexColumnWidth(2.2),
-              1: FlexColumnWidth(1.4),
-              2: FlexColumnWidth(1.8),
-            },
-            children: [
-              TableRow(
-                children: [
-                  _cell(theme, '', header: true),
-                  _cell(theme, 'FREE', header: true),
-                  _cell(theme, 'PRO', header: true),
-                ],
-              ),
-              for (final r in rows)
-                TableRow(
-                  children: [
-                    _cell(theme, r[0]),
-                    _cell(theme, r[1], dim: true),
-                    _cell(theme, r[2], pro: true),
-                  ],
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cell(MountainThemeDef t, String text,
-      {bool header = false, bool dim = false, bool pro = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: pro
-              ? t.accent
-              : t.hudText.withValues(alpha: dim ? 0.7 : 1),
-          fontWeight: header
-              ? FontWeight.w900
-              : (pro ? FontWeight.w800 : FontWeight.w600),
-          fontSize: header ? 13 : 12.5,
-          letterSpacing: header ? 1.2 : 0,
-        ),
-      ),
-    );
-  }
-}
-
-class _BuyCard extends StatelessWidget {
-  final MountainThemeDef theme;
-  final SlalomSettings settings;
-  final StoreService store;
-  final SlalomAudio audio;
-
-  const _BuyCard({
-    required this.theme,
-    required this.settings,
-    required this.store,
-    required this.audio,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: store.purchaseInProgress,
-      builder: (_, _) => Alpine.panel(
-        theme: theme,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('UNLOCK PRO FOREVER',
-                style: Alpine.label(13, theme: theme)),
-            const SizedBox(height: 8),
-            if (!store.storeReady) ...[
-              Text(
-                store.error ??
-                    'PRO purchases will appear here once the store products are set up.',
-                style: Alpine.body(14, theme: theme,
-                    color: theme.hudText
-                        .withValues(alpha: 0.8)),
-                textAlign: TextAlign.center,
-              ),
-            ] else if (settings.isPro) ...[
-              Text('PRO is active on this account. Enjoy! ⭐',
-                  style: Alpine.body(15, theme: theme),
-                  textAlign: TextAlign.center),
-            ] else ...[
-              Text(
-                'One-time purchase — no subscription, yours forever.',
-                style: Alpine.body(13, theme: theme,
-                    color: theme.hudText
-                        .withValues(alpha: 0.8)),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: store.purchaseInProgress.value
-                    ? const CircularProgressIndicator()
-                    : Alpine.button(
-                        theme: theme,
-                        label:
-                            'Unlock PRO${store.proProduct != null ? ' — ${store.proProduct!.price}' : ''}',
-                        emoji: '⭐',
-                        primary: true,
-                        onTap: () {
-                          audio.click();
-                          store.buyPro();
-                        },
-                      ),
-              ),
-            ],
-            if (store.purchaseError.value != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(store.purchaseError.value!,
-                    style: const TextStyle(
-                        color: Color(0xFFE0442E),
-                        fontWeight: FontWeight.w700),
-                    textAlign: TextAlign.center),
-              ),
-            const SizedBox(height: 10),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  audio.click();
-                  store.restore();
-                },
-                child: Text('Restore purchases',
-                    style: Alpine.body(14, theme: theme,
-                        color: theme.accent)),
-              ),
-            ),
-          ],
         ),
       ),
     );

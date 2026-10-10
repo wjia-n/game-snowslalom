@@ -62,7 +62,7 @@ class SlalomSettings extends ChangeNotifier {
   List<String> playerNames = List.of(defaultNames);
   String themeId = 'powder';
   String skierStyleId = 'racer';
-  bool isPro = false;
+  bool isPro = true; // everything unlocked — no Pro version
   int wins = 0;
   int gamesPlayed = 0;
 
@@ -117,7 +117,7 @@ class SlalomSettings extends ChangeNotifier {
     }
     themeId = p.getString(_kTheme) ?? 'powder';
     skierStyleId = p.getString(_kSkier) ?? 'racer';
-    isPro = p.getBool(_kIsPro) ?? false;
+    isPro = true; // everything unlocked
     wins = p.getInt(_kWins) ?? 0;
     gamesPlayed = p.getInt(_kGames) ?? 0;
     for (final d in SlalomDifficulty.all) {
