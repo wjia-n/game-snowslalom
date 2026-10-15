@@ -16,6 +16,9 @@ import 'package:audioplayers/audioplayers.dart';
 ///   resumes exactly where it left off instead of restarting or dying.
 /// - Every public method catches player errors; audio can never crash the app.
 class SlalomAudio {
+  /// Per-game pitch character (snowslalom): 0.84x. Makes SFX unique.
+  static const double _pitchMul = 0.840;
+
   static const int _rate = 22050;
   final AudioPlayer _sfx = AudioPlayer();
   final AudioPlayer _music = AudioPlayer();
@@ -99,6 +102,8 @@ class SlalomAudio {
 
   List<double> _tone(double freq, double secs,
       {double freqEnd = 0, double attack = 0.02, double harmonics = 0.25}) {
+    freq *= _pitchMul;
+    freqEnd *= _pitchMul;
     final n = (_rate * secs).round();
     final out = List<double>.filled(n, 0);
     for (int i = 0; i < n; i++) {
@@ -155,46 +160,39 @@ class SlalomAudio {
       _cache.putIfAbsent(key, () => _wav(build()));
 
   Uint8List _menuBytes() => _clip('music_menu', () {
-        // Cozy alpine waltz pads, 18s loop (D – G – A – D).
+        // B 0 – 4 – 5 – 3 warm pad, 16s loop. Unique to snowslalom.
         final seq = [
-          [293.66, 369.99, 440.0], // D
-          [196.0, 246.94, 392.0], // G
-          [220.0, 277.18, 440.0], // A
-          [293.66, 369.99, 440.0], // D
+          [246.94, 311.12, 369.99],
+          [369.99, 466.16, 554.36],
+          [415.30, 493.88, 622.25],
+          [329.63, 415.30, 493.88]
         ];
         final out = <double>[];
         for (final chord in seq) {
-          out.addAll(_padChord(chord, 4.5));
+          out.addAll(_padChord(chord, 4.0));
         }
         return out;
       });
 
+
   Uint8List _gameBytes() => _clip('music_game', () {
-        // Driving alpine rhythm: low pulse + bright pluck melody, 12s loop.
-        final n = (_rate * 12).round();
-        final out = List<double>.filled(n, 0);
-        // Pulse bass.
-        for (int beat = 0; beat < 24; beat++) {
-          final start = (n * beat / 24).round();
-          final kick = _tone(110, 0.16, harmonics: 0.1);
-          for (int i = 0; i < kick.length && start + i < n; i++) {
-            out[start + i] += kick[i] * 0.5;
-          }
+        // B arpeggiated 0 – 4 – 5 – 3, 16s loop. Unique to snowslalom.
+        final notes = [246.94, 311.12, 369.99, 311.12, 369.99, 466.16, 554.36, 466.16, 415.30, 493.88, 622.25, 493.88, 329.63, 415.30, 493.88, 415.30];
+        final out = <double>[];
+        final noteLen = 16.0 / notes.length;
+        for (final n in notes) {
+          out.addAll(_tone(n, noteLen * 0.9, harmonics: 0.3));
+          final gap = List<double>.filled((_rate * noteLen * 0.1).round(), 0);
+          out.addAll(gap);
         }
-        // Plucked melody (A minor pentatonic, brisk).
-        final plucks = [
-          440.0, 523.25, 587.33, 659.25, 587.33, 523.25, 440.0, 392.0,
-          440.0, 523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25,
-        ];
-        for (int k = 0; k < plucks.length; k++) {
-          final start = (n * k / plucks.length).round();
-          final tone = _tone(plucks[k], 0.4, harmonics: 0.4);
-          for (int i = 0; i < tone.length && start + i < n; i++) {
-            out[start + i] += tone[i] * 0.22;
-          }
+        // Soft pad underneath
+        final pad = _padChord([246.94, 311.12, 369.99], 16.0);
+        for (int i = 0; i < out.length && i < pad.length; i++) {
+          out[i] += pad[i] * 0.3;
         }
         return out;
       });
+
 
   // ------------------------------------------------------------------ SFX
   Future<void> _play(Uint8List bytes) async {

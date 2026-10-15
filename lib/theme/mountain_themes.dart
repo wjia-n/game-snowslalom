@@ -85,7 +85,7 @@ class MountainThemes {
     ),
     MountainThemeDef(
       id: 'dawn',
-      name: 'Alpine Dawn',
+      name: 'Summit Dawn',
       skyTop: Color(0xFF5E7FC4),
       skyBottom: Color(0xFFF6D9C4),
       peakFar: Color(0xFF8FA0D8),
