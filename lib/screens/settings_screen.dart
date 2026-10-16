@@ -3,6 +3,7 @@ import '../services/audio_service.dart';
 import '../services/settings_service.dart';
 import '../theme/alpine.dart';
 import '../theme/mountain_themes.dart';
+import '../transfer/transfer_ui.dart';
 
 /// Settings: audio toggles + volume, skier renaming, stats reset.
 class SettingsScreen extends StatelessWidget {
@@ -41,6 +42,7 @@ class SettingsScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
+              TransferSaveTile(gameSlug: 'snowslalom'),
                   Alpine.panel(
                     theme: t,
                     child: Column(
